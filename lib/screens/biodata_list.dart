@@ -126,6 +126,7 @@ class _BiodataListState extends State<BiodataList> {
   }
 
   Future<void> _showDeleteDialog(String npm) async {
+    if (!mounted) return;
     return showDialog<void>(
       context: context,
       barrierDismissible: false,

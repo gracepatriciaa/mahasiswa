@@ -1,29 +1,29 @@
 {
-    "project_info": {
-      "project_number": "671124957223",
-      "project_id": "biodatamahasiswa-8c9f2",
-      "storage_bucket": "biodatamahasiswa-8c9f2.firebasestorage.app"
-    },
-    "client": [
-      {
-        "client_info": {
-          "mobilesdk_app_id": "1:671124957223:android:c5bda4c9e44d5cb64b0602",
-          "android_client_info": {
-            "package_name": "com.example.mahasiswa"
-          }
-        },
-        "oauth_client": [],
-        "api_key": [
-          {
-            "current_key": "AIzaSyCeAIRyxIgnnXUJCv-78EnJ7kmuyF95oRI"
-          }
-        ],
-        "services": {
-          "appinvite_service": {
-            "other_platform_oauth_client": []
-          }
+  "project_info": {
+    "project_number": "671124957223",
+    "project_id": "biodatamahasiswa-8c9f2",
+    "storage_bucket": "biodatamahasiswa-8c9f2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:671124957223:android:c5bda4c9e44d5cb64b0602",
+        "android_client_info": {
+          "package_name": "com.example.mahasiswa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCeAIRyxIgnnXUJCv-78EnJ7kmuyF95oRI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
         }
       }
-    ],
-    "configuration_version": "1"
-  }
+    }
+  ],
+  "configuration_version": "1"
+}

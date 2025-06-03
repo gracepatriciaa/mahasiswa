@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:firebase_database/ui/firebase_animated_list.dart';
 import '../models/mahasiswa_model.dart';
 import 'biodata_form.dart';
 
@@ -58,64 +57,88 @@ class _BiodataListState extends State<BiodataList> {
             ),
           ),
           Expanded(
-            child: FirebaseAnimatedList(
-              query: _database,
-              defaultChild: const Center(child: CircularProgressIndicator()),
-              itemBuilder: (context, snapshot, animation, index) {
-                final biodata = Mahasiswa(
-                  npm: snapshot.key ?? '',
-                  nama: snapshot.child('nama').value.toString(),
-                  visi: snapshot.child('visi').value.toString(),
-                );
-
-                // Filter data berdasarkan search query
-                if (_searchQuery.isNotEmpty &&
-                    !biodata.nama.toLowerCase().contains(_searchQuery) &&
-                    !biodata.npm.contains(_searchQuery)) {
-                  return const SizedBox.shrink();
+            child: StreamBuilder<DatabaseEvent>(
+              stream: _database.onValue,
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
                 }
 
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 8.0,
-                    vertical: 4.0,
-                  ),
-                  child: ListTile(
-                    title: Text(biodata.nama),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('NPM: ${biodata.npm}'),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Visi: ${biodata.visi}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12),
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || snapshot.data!.snapshot.value == null) {
+                  return const Center(child: Text('Tidak ada data'));
+                }
+
+                final Map<dynamic, dynamic> data = 
+                    snapshot.data!.snapshot.value as Map<dynamic, dynamic>;
+                final List<Mahasiswa> biodataList = [];
+
+                data.forEach((key, value) {
+                  biodataList.add(Mahasiswa(
+                    npm: key.toString(),
+                    nama: value['nama'].toString(),
+                    visi: value['visi'].toString(),
+                  ));
+                });
+
+                // Filter data berdasarkan search query
+                final filteredList = _searchQuery.isEmpty
+                    ? biodataList
+                    : biodataList.where((biodata) {
+                        return biodata.nama.toLowerCase().contains(_searchQuery) ||
+                            biodata.npm.contains(_searchQuery);
+                      }).toList();
+
+                return ListView.builder(
+                  itemCount: filteredList.length,
+                  itemBuilder: (context, index) {
+                    final biodata = filteredList[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 8.0,
+                        vertical: 4.0,
+                      ),
+                      child: ListTile(
+                        title: Text(biodata.nama),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('NPM: ${biodata.npm}'),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Visi: ${biodata.visi}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => BiodataForm(
-                                initialData: biodata,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => BiodataForm(
+                                    initialData: biodata,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _showDeleteDialog(biodata.npm),
+                            ),
+                          ],
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _showDeleteDialog(biodata.npm),
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 );
               },
             ),

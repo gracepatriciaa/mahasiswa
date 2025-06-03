@@ -4,6 +4,8 @@ import 'screens/biodata_list.dart'; // Pastikan hanya import ini
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Inisialisasi Firebase. Variabel 'firebaseApp' tidak perlu disimpan
+  // jika tidak digunakan secara eksplisit setelah inisialisasi.
   await Firebase.initializeApp();
   runApp(const MyApp());
 }

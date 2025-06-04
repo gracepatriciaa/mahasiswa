@@ -21,6 +21,36 @@ class _BiodataListState extends State<BiodataList> {
     super.dispose();
   }
 
+  Future<void> _showDeleteDialog(String npm) async {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogCtx) {
+        return AlertDialog(
+          title: const Text('Konfirmasi'),
+          content: const Text('Apakah Anda yakin ingin menghapus data ini?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Batal'),
+              onPressed: () => Navigator.of(dialogCtx).pop(),
+            ),
+            TextButton(
+              child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+              onPressed: () async {
+                Navigator.of(dialogCtx).pop();
+                await _database.child(npm).remove();
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Data berhasil dihapus')),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,10 +59,12 @@ class _BiodataListState extends State<BiodataList> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const BiodataForm()),
-            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (ctx) => const BiodataForm()),
+              );
+            },
           ),
         ],
       ),
@@ -63,39 +95,29 @@ class _BiodataListState extends State<BiodataList> {
                 if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 }
-
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-
                 if (!snapshot.hasData || snapshot.data!.snapshot.value == null) {
                   return const Center(child: Text('Tidak ada data'));
                 }
-
-                final Map<dynamic, dynamic> data = 
+                final Map<dynamic, dynamic> data =
                     snapshot.data!.snapshot.value as Map<dynamic, dynamic>;
                 final List<Mahasiswa> biodataList = [];
-
                 data.forEach((key, value) {
-                  biodataList.add(Mahasiswa(
-                    npm: key.toString(),
-                    nama: value['nama'].toString(),
-                    visi: value['visi'].toString(),
-                  ));
+                  final nama = value['nama'] ?? '';
+                  final visi = value['visi'] ?? '';
+                  biodataList.add(Mahasiswa(npm: key, nama: nama, visi: visi));
                 });
-
-                // Filter data berdasarkan search query
-                final filteredList = _searchQuery.isEmpty
-                    ? biodataList
-                    : biodataList.where((biodata) {
-                        return biodata.nama.toLowerCase().contains(_searchQuery) ||
-                            biodata.npm.contains(_searchQuery);
-                      }).toList();
-
                 return ListView.builder(
-                  itemCount: filteredList.length,
+                  itemCount: biodataList.length,
                   itemBuilder: (context, index) {
-                    final biodata = filteredList[index];
+                    final biodata = biodataList[index];
+                    if (_searchQuery.isNotEmpty &&
+                        !biodata.nama.toLowerCase().contains(_searchQuery) &&
+                        !biodata.npm.contains(_searchQuery)) {
+                      return const SizedBox.shrink();
+                    }
                     return Card(
                       margin: const EdgeInsets.symmetric(
                         horizontal: 8.0,
@@ -121,14 +143,16 @@ class _BiodataListState extends State<BiodataList> {
                           children: [
                             IconButton(
                               icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => BiodataForm(
-                                    initialData: biodata,
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (ctx) => BiodataForm(
+                                      initialData: biodata,
+                                    ),
                                   ),
-                                ),
-                              ),
+                                );
+                              },
                             ),
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
@@ -145,37 +169,6 @@ class _BiodataListState extends State<BiodataList> {
           ),
         ],
       ),
-    );
-  }
-
-  Future<void> _showDeleteDialog(String npm) async {
-    if (!mounted) return;
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Konfirmasi'),
-          content: const Text('Apakah Anda yakin ingin menghapus data ini?'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Batal'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            TextButton(
-              child: const Text('Hapus', style: TextStyle(color: Colors.red)),
-              onPressed: () async {
-                await _database.child(npm).remove();
-                if (!mounted) return;
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Data berhasil dihapus')),
-                );
-              },
-            ),
-          ],
-        );
-      },
     );
   }
 }

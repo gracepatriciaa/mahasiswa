@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import '../models/mahasiswa_model.dart'; // Pastikan model sudah dibuat
+import '../models/mahasiswa_model.dart';
 
 class BiodataForm extends StatefulWidget {
-  final Mahasiswa? initialData; // Gunakan model Mahasiswa
+  final Mahasiswa? initialData;
+
   const BiodataForm({super.key, this.initialData});
 
   @override
@@ -12,15 +13,15 @@ class BiodataForm extends StatefulWidget {
 
 class _BiodataFormState extends State<BiodataForm> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _npmController = TextEditingController();
-  final TextEditingController _namaController = TextEditingController();
-  final TextEditingController _visiController = TextEditingController();
+  final _npmController = TextEditingController();
+  final _namaController = TextEditingController();
+  final _visiController = TextEditingController();
+  final DatabaseReference _database = FirebaseDatabase.instance.ref('mahasiswa');
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // Isi form jika ada data awal (edit mode)
     if (widget.initialData != null) {
       _npmController.text = widget.initialData!.npm;
       _namaController.text = widget.initialData!.nama;
@@ -36,41 +37,36 @@ class _BiodataFormState extends State<BiodataForm> {
     super.dispose();
   }
 
-  Future<void> _simpanData() async {
+  Future<void> _saveData() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
-      final databaseRef = FirebaseDatabase.instance.ref('mahasiswa');
       final mahasiswa = Mahasiswa(
         npm: _npmController.text.trim(),
         nama: _namaController.text.trim(),
         visi: _visiController.text.trim(),
       );
 
-      await databaseRef.child(mahasiswa.npm).set(mahasiswa.toMap());
+      await _database.child(mahasiswa.npm).set(mahasiswa.toMap());
 
       if (!mounted) return;
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Data berhasil disimpan!')),
+        SnackBar(
+          content: Text(widget.initialData == null
+              ? 'Data berhasil ditambahkan'
+              : 'Data berhasil diupdate'),
+        ),
       );
-
-      // Clear form setelah simpan
-      if (widget.initialData == null) {
-        _npmController.clear();
-        _namaController.clear();
-        _visiController.clear();
-      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -78,58 +74,85 @@ class _BiodataFormState extends State<BiodataForm> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.initialData == null ? 'Tambah Data' : 'Edit Data'),
+        title: Text(
+            widget.initialData == null ? 'Tambah Mahasiswa' : 'Edit Mahasiswa'),
+        actions: [
+          if (_isLoading)
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.save),
+              onPressed: _saveData,
+            ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextFormField(
-                  controller: _npmController,
-                  decoration: const InputDecoration(
-                    labelText: 'NPM',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) =>
-                      value!.isEmpty ? 'NPM tidak boleh kosong' : null,
-                  enabled: widget.initialData == null, // Disable jika edit
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _npmController,
+                decoration: const InputDecoration(
+                  labelText: 'NPM',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _namaController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nama Lengkap',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) =>
-                      value!.isEmpty ? 'Nama tidak boleh kosong' : null,
+                enabled: widget.initialData == null,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'NPM tidak boleh kosong';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _namaController,
+                decoration: const InputDecoration(
+                  labelText: 'Nama',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _visiController,
-                  decoration: const InputDecoration(
-                    labelText: 'Visi 5 Tahun',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                  validator: (value) =>
-                      value!.isEmpty ? 'Visi tidak boleh kosong' : null,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Nama tidak boleh kosong';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _visiController,
+                decoration: const InputDecoration(
+                  labelText: 'Visi',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _simpanData,
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 50),
-                  ),
+                maxLines: 3,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Visi tidak boleh kosong';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _saveData,
                   child: _isLoading
                       ? const CircularProgressIndicator()
-                      : const Text('SIMPAN'),
+                      : Text(widget.initialData == null ? 'Tambah' : 'Update'),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

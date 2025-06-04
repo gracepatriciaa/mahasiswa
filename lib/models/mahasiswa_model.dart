@@ -9,9 +9,10 @@ class Mahasiswa {
     required this.visi,
   });
 
-  Map<String, dynamic> toMap() => {
-    'npm': npm,
-    'nama': nama,
-    'visi': visi,
-  };
+  Map<String, dynamic> toMap() {
+    return {
+      'nama': nama,
+      'visi': visi,
+    };
+  }
 }

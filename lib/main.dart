@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/biodata_list.dart'; // Pastikan hanya import ini
+import 'firebase_options.dart';
+import 'screens/biodata_list.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Inisialisasi Firebase. Variabel 'firebaseApp' tidak perlu disimpan
-  // jika tidak digunakan secara eksplisit setelah inisialisasi.
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -22,7 +23,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         useMaterial3: true,
       ),
-      home: const BiodataList(), // Pastikan BiodataList adalah const
+      home: const BiodataList(),
     );
   }
 }
